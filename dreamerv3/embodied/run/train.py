@@ -27,13 +27,19 @@ def train(agent, env, replay, logger, args):
   timer.wrap('logger', logger, ['write'])
 
   nonzeros = set()
+  scores = [] # A FIFO queue for keeping 100 scores to average over
   def per_episode(ep):
     length = len(ep['reward']) - 1
-    score = float(ep['reward'].astype(np.float64).sum())
+    score = float(ep['reward'].astype(np.float64).sum()) # Sum of the rewards in an episode as the score
+    scores.append(score) # Add the score to the queu
+    # Keep the scores to the last 100
+    if len(scores) > 100:
+      scores.pop(0)
     sum_abs_reward = float(np.abs(ep['reward']).astype(np.float64).sum())
     logger.add({
         'length': length,
         'score': score,
+        'avg_score': sum(scores) / len(scores), # Moving average of the score 
         'sum_abs_reward': sum_abs_reward,
         'reward_rate': (np.abs(ep['reward']) >= 0.5).mean(),
     }, prefix='episode')
